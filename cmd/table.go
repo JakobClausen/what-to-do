@@ -8,6 +8,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const gap = "\n"
+
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
@@ -24,16 +26,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
+		case tea.KeyEsc.String():
 			if m.table.Focused() {
 				m.table.Blur()
 			} else {
 				m.table.Focus()
 			}
-		case "q", "ctrl+c":
+		case tea.KeyCtrlQ.String(), tea.KeyCtrlC.String():
 			return m, tea.Quit
-		case "enter":
+		case tea.KeyEnter.String():
 			selectedTask := m.table.SelectedRow()[0]
+			fmt.Println(selectedTask)
 			return NewTextArea(selectedTask), nil
 		}
 	}
@@ -43,7 +46,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return baseStyle.Render(m.table.View()) + "\n"
+	return fmt.Sprintf(
+		"%s%s%s",
+		baseStyle.Render(m.table.View()),
+		gap,
+		"(esc to quit)",
+	)
 }
 
 func NewTable(store *TodoStore) model {
