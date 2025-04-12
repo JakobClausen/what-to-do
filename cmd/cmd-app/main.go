@@ -12,9 +12,6 @@ import (
 func main() {
 	physicalWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
 
-	// Optionally, you might initialize global styling with physicalWidth here,
-	// or let your TUI package handle it internally
-
 	p := tea.NewProgram(tui.InitialModel(physicalWidth))
 	if err := p.Start(); err != nil {
 		fmt.Println("Error running program:", err)
