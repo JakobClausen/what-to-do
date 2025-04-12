@@ -1,10 +1,11 @@
 package tui
 
 import (
-	column "what-to-do/internal/tui/column"
+	list "what-to-do/internal/tui/list"
 )
 
-func InitialModel(width int) column.ColumnModel {
+func InitialModel(width int) list.ListModel {
 
-	return column.CreateColumnModel(width)
+	// return column.CreateColumnModel(width)
+	return list.NewListModel()
 }
