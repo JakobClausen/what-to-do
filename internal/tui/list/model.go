@@ -1,10 +1,6 @@
 package list
 
 import (
-	"fmt"
-	"os"
-	"time"
-
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -64,24 +60,22 @@ func newListKeyMap() *listKeyMap {
 	}
 }
 
-func NewListModel() ListModel {
+func NewListModel(title string) ListModel {
 	var (
 		itemGenerator randomItemGenerator
 		delegateKeys  = newDelegateKeyMap()
 		listKeys      = newListKeyMap()
 	)
 
-	// Make initial list of items
 	const numItems = 24
 	items := make([]list.Item, numItems)
 	for i := range numItems {
 		items[i] = itemGenerator.next()
 	}
 
-	// Setup list
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
-	groceryList.Title = "Groceries"
+	groceryList.Title = title
 	groceryList.Styles.Title = titleStyle
 	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
@@ -115,7 +109,6 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 
 	case tea.KeyMsg:
-		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
 			break
 		}
@@ -153,7 +146,6 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// This will also call our delegate's update function.
 	newListModel, cmd := m.list.Update(msg)
 	m.list = newListModel
 	cmds = append(cmds, cmd)
@@ -163,13 +155,4 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m ListModel) View() string {
 	return appStyle.Render(m.list.View())
-}
-
-func main() {
-	time.Now().UTC().UnixNano()
-
-	if _, err := tea.NewProgram(NewListModel(), tea.WithAltScreen()).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
 }

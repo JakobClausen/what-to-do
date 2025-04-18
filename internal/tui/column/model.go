@@ -17,6 +17,10 @@ func (m ColumnModel) Init() tea.Cmd {
 	return nil
 }
 
+func (m ColumnModel) ActiveTab() int {
+	return m.activeTab
+}
+
 func (m ColumnModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch key := msg.(type) {
 	case tea.KeyMsg:
