@@ -10,6 +10,7 @@ import (
 type ColumnModel struct {
 	activeTab int
 	width     int
+	Height    int
 }
 
 func (m ColumnModel) Init() tea.Cmd {
@@ -50,7 +51,7 @@ func (m ColumnModel) View() string {
 	}
 	gap := TabGap.Render(strings.Repeat(" ", max(0, m.width-lipgloss.Width(row)-2)))
 	row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, gap)
-	doc.WriteString(row + "\n\n")
+	doc.WriteString(row)
 
 	return DocStyle.MaxWidth(m.width).Render(doc.String())
 }

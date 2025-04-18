@@ -2,7 +2,6 @@ package list
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"time"
 
@@ -75,7 +74,7 @@ func NewListModel() ListModel {
 	// Make initial list of items
 	const numItems = 24
 	items := make([]list.Item, numItems)
-	for i := 0; i < numItems; i++ {
+	for i := range numItems {
 		items[i] = itemGenerator.next()
 	}
 
@@ -167,7 +166,7 @@ func (m ListModel) View() string {
 }
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
+	time.Now().UTC().UnixNano()
 
 	if _, err := tea.NewProgram(NewListModel(), tea.WithAltScreen()).Run(); err != nil {
 		fmt.Println("Error running program:", err)
