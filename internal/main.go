@@ -1,6 +1,7 @@
-package tui
+package internal
 
 import (
+	"what-to-do/internal/store/sqlite"
 	"what-to-do/internal/tui/column"
 	"what-to-do/internal/tui/list"
 
@@ -14,6 +15,12 @@ type CompositeModel struct {
 }
 
 func InitialModel(width int) CompositeModel {
+
+	_, err := sqlite.New()
+
+	if err != nil {
+		panic(err)
+	}
 
 	spotlightList := list.NewListModel("Spotlight Items")
 
