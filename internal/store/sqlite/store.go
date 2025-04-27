@@ -7,9 +7,12 @@ import (
 	"path/filepath"
 
 	"what-to-do/internal/domain"
+	"what-to-do/internal/store"
 
 	_ "github.com/glebarez/go-sqlite"
 )
+
+var _ store.CommandStore = (*Store)(nil)
 
 type Store struct{ db *sql.DB }
 
@@ -33,7 +36,7 @@ func New() (*Store, error) {
 
 	s := &Store{db: db}
 
-	return &Store{db: db}, s.migrate()
+	return s, s.migrate()
 }
 
 func (s *Store) migrate() error {
@@ -53,7 +56,7 @@ CREATE TABLE IF NOT EXISTS commands (
 
 func (s *Store) Close() error { return s.db.Close() }
 
-func (s *Store) CreateCommand(ctx context.Context, c *domain.Command) (int64, error) {
+func (s *Store) Create(ctx context.Context, c *domain.Command) (int64, error) {
 	res, err := s.db.ExecContext(
 		ctx,
 		`INSERT INTO commands (alias, description, command, spotlighted)
@@ -66,7 +69,7 @@ func (s *Store) CreateCommand(ctx context.Context, c *domain.Command) (int64, er
 	return res.LastInsertId()
 }
 
-func (s *Store) GetCommand(ctx context.Context, id int64) (*domain.Command, error) {
+func (s *Store) Get(ctx context.Context, id int64) (*domain.Command, error) {
 	var c domain.Command
 	err := s.db.QueryRowContext(
 		ctx,
@@ -80,7 +83,7 @@ func (s *Store) GetCommand(ctx context.Context, id int64) (*domain.Command, erro
 	return &c, err
 }
 
-func (s *Store) ListCommands(ctx context.Context) ([]*domain.Command, error) {
+func (s *Store) List(ctx context.Context) ([]*domain.Command, error) {
 	rows, err := s.db.QueryContext(
 		ctx,
 		`SELECT id, alias, description, command, spotlighted,
@@ -107,7 +110,7 @@ func (s *Store) ListCommands(ctx context.Context) ([]*domain.Command, error) {
 	return cmds, rows.Err()
 }
 
-func (s *Store) UpdateCommand(ctx context.Context, c *domain.Command) error {
+func (s *Store) Update(ctx context.Context, c *domain.Command) error {
 	_, err := s.db.ExecContext(
 		ctx,
 		`UPDATE commands SET alias = ?, description = ?, command = ?, spotlighted = ?, updated_at = CURRENT_TIMESTAMP
@@ -117,7 +120,7 @@ func (s *Store) UpdateCommand(ctx context.Context, c *domain.Command) error {
 	return err
 }
 
-func (s *Store) DeleteCommand(ctx context.Context, id int64) error {
+func (s *Store) Delete(ctx context.Context, id int64) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM commands WHERE id = ?`, id)
 	return err
 }
