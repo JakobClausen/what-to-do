@@ -14,6 +14,10 @@ type ListModel struct {
 	delegateKeys *delegateKeyMap
 }
 
+type ExecuteCommandMsg struct {
+	Command string
+}
+
 type listKeyMap struct {
 	toggleSpinner    key.Binding
 	toggleTitleBar   key.Binding

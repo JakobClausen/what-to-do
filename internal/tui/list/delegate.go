@@ -22,7 +22,18 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
-				return m.NewStatusMessage(statusMessageStyle("You chose " + title))
+				// Get the selected item
+				if i, ok := m.SelectedItem().(item); ok {
+					// Get the actual command to execute
+					cmd := i.Command()
+					if cmd != nil {
+						// Return a command that will send a message to run this command
+						return func() tea.Msg {
+							return ExecuteCommandMsg{Command: cmd.Command}
+						}
+					}
+				}
+				return nil
 
 			case key.Matches(msg, keys.remove):
 				index := m.Index()

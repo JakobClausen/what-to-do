@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"what-to-do/internal/domain"
 	"what-to-do/internal/store/sqlite"
 	"what-to-do/internal/tui/column"
@@ -62,6 +64,25 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Handle specific message types first
 	switch msg := msg.(type) {
+	case list.ExecuteCommandMsg:
+		// Clear screen and quit app
+		tea.ClearScreen()
+
+		// Execute the command in the shell
+		cmd := exec.Command("bash", "-c", msg.Command)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		// First quit the application
+		return m, tea.Sequence(
+			tea.Quit,
+			func() tea.Msg {
+				// Then execute the command
+				cmd.Run()
+				return nil
+			},
+		)
 	case ListRefreshMsg:
 		spotlightedCmds := []*domain.Command{}
 		allCmds := []*domain.Command{}
