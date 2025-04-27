@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"context"
+	"fmt"
+	"what-to-do/internal/domain"
 	"what-to-do/internal/store/sqlite"
 	"what-to-do/internal/tui/column"
 	"what-to-do/internal/tui/form"
@@ -10,16 +13,21 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// ListRefreshMsg is sent when the lists need to be refreshed with new data
+type ListRefreshMsg struct {
+	Commands []*domain.Command
+}
+
 type CompositeModel struct {
 	Column   column.ColumnModel
-	Lists    []list.ListModel
+	Lists    []*list.ListModel
 	Form     form.CommandForm
 	ShowForm bool
+	db       *sqlite.Store // Database reference
 }
 
 func InitialModel(width int) CompositeModel {
-	_, err := sqlite.New()
-
+	db, err := sqlite.New()
 	if err != nil {
 		panic(err)
 	}
@@ -28,10 +36,11 @@ func InitialModel(width int) CompositeModel {
 	allCommandsList := list.NewListModel("All Commands")
 
 	return CompositeModel{
-		Lists:    []list.ListModel{spotlightList, allCommandsList},
+		Lists:    []*list.ListModel{&spotlightList, &allCommandsList}, // Store pointers
 		Column:   column.CreateColumnModel(width),
 		Form:     form.NewCommandForm(),
 		ShowForm: false,
+		db:       db,
 	}
 }
 
@@ -42,51 +51,41 @@ func (m CompositeModel) Init() tea.Cmd {
 		cmds = append(cmds, m.Lists[i].Init())
 	}
 
+	// Add an initial list refresh command
+	cmds = append(cmds, m.refreshLists())
+
 	return tea.Batch(cmds...)
 }
 
 func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	// Handle showing form when "n" is pressed
-	if keyMsg, ok := msg.(tea.KeyMsg); ok && !m.ShowForm {
-		if keyMsg.String() == "n" {
+	// Handle specific message types first
+	switch msg := msg.(type) {
+	case ListRefreshMsg:
+		spotlightedCmds := []*domain.Command{}
+		allCmds := []*domain.Command{}
+
+		for _, cmd := range msg.Commands {
+			allCmds = append(allCmds, cmd)
+			if cmd.Spotlighted {
+				spotlightedCmds = append(spotlightedCmds, cmd)
+			}
+		}
+
+		// Update lists with the commands
+		m.Lists[0].SetItems(spotlightedCmds) // Spotlight list
+		m.Lists[1].SetItems(allCmds)         // All commands list
+
+		return m, nil
+
+	case tea.KeyMsg:
+		if !m.ShowForm && msg.String() == "n" {
 			m.ShowForm = true
 			m.Form = form.NewCommandForm() // Reset form
 			return m, m.Form.Init()
 		}
-	}
 
-	// If form is active, delegate updates to the form
-	if m.ShowForm {
-		updatedForm, cmd := m.Form.Update(msg)
-		m.Form = updatedForm.(form.CommandForm)
-
-		// Check if form is completed or cancelled
-		if m.Form.IsCompleted() {
-			// Process the completed form
-			// Example: Save to database or add to lists
-			if m.Form.Spotlighted {
-				// Add to spotlight list
-				// m.Lists[0].AddItem(m.Form)
-			}
-			// Add to all commands list
-			// m.Lists[1].AddItem(m.Form)
-
-			m.ShowForm = false
-			return m, nil
-		}
-
-		if m.Form.IsCancelled() {
-			m.ShowForm = false
-			return m, nil
-		}
-
-		return m, cmd
-	}
-
-	// Normal update flow for non-form state
-	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.Column = column.CreateColumnModel(msg.Width)
 		columnHeight := lipgloss.Height(m.Column.View())
@@ -98,36 +97,95 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		for i := range m.Lists {
 			updatedListModel, listCmd := m.Lists[i].Update(listMsg)
-			m.Lists[i] = updatedListModel.(list.ListModel)
+			if updatedModel, ok := updatedListModel.(*list.ListModel); ok {
+				// No need to reassign since we're using pointers already
+				// The model is updated in-place
+				_ = updatedModel // Just to avoid unused variable warning
+			}
 			cmds = append(cmds, listCmd)
 		}
 
 		return m, tea.Batch(cmds...)
 	}
 
+	// Handle form updates when form is showing
+	if m.ShowForm {
+		updatedForm, cmd := m.Form.Update(msg)
+		m.Form = updatedForm.(form.CommandForm)
+
+		if m.Form.IsCompleted() {
+			// Convert form data to domain.Command
+			command := &domain.Command{
+				Command:     m.Form.Command,
+				Alias:       m.Form.Alias,
+				Description: m.Form.Description,
+				Spotlighted: m.Form.Spotlighted,
+			}
+
+			// Save to database
+			ctx := context.Background()
+			_, err := m.db.Create(ctx, command)
+			if err != nil {
+				// Handle error (you might want to display this to the user)
+				fmt.Println("Failed to save command:", err)
+			} else {
+				// Command saved successfully, refresh lists
+				cmds = append(cmds, m.refreshLists())
+			}
+
+			m.ShowForm = false
+			return m, tea.Batch(cmds...)
+		}
+
+		if m.Form.IsCancelled() {
+			m.ShowForm = false
+			return m, nil
+		}
+
+		return m, cmd
+	}
+
+	// Handle regular column and list updates
 	updatedColumnModel, colCmd := m.Column.Update(msg)
 	m.Column = updatedColumnModel.(column.ColumnModel)
 	cmds = append(cmds, colCmd)
 
 	activeIdx := m.Column.ActiveTab()
 	updatedListModel, listCmd := m.Lists[activeIdx].Update(msg)
-	m.Lists[activeIdx] = updatedListModel.(list.ListModel)
+	if updatedModel, ok := updatedListModel.(*list.ListModel); ok {
+		// No need to reassign since we're using pointers
+		_ = updatedModel
+	}
 	cmds = append(cmds, listCmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m CompositeModel) View() string {
-	// Show form when active
 	if m.ShowForm {
 		return m.Form.View()
 	}
 
-	// Otherwise show the normal view
 	activeIdx := m.Column.ActiveTab()
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.Column.View(),
 		m.Lists[activeIdx].View(),
 	)
+}
+
+// refreshLists creates a command to refresh list data from the database
+func (m CompositeModel) refreshLists() tea.Cmd {
+	return func() tea.Msg {
+		// Get all commands from database
+		ctx := context.Background()
+		commands, err := m.db.List(ctx)
+		if err != nil {
+			fmt.Println("Error loading commands:", err)
+			return nil
+		}
+
+		// Return a message with the commands
+		return ListRefreshMsg{Commands: commands}
+	}
 }

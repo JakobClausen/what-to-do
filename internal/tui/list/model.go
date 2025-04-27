@@ -1,25 +1,18 @@
 package list
 
 import (
+	"what-to-do/internal/domain"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-type item struct {
-	title       string
-	description string
-}
 
 type ListModel struct {
 	list         list.Model
 	keys         *listKeyMap
 	delegateKeys *delegateKeyMap
 }
-
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.description }
-func (i item) FilterValue() string { return i.title }
 
 type listKeyMap struct {
 	toggleSpinner    key.Binding
@@ -93,7 +86,7 @@ func (m ListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -129,7 +122,6 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.toggleHelpMenu):
 			m.list.SetShowHelp(!m.list.ShowHelp())
 			return m, nil
-
 		}
 	}
 
@@ -142,4 +134,18 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m ListModel) View() string {
 	return appStyle.Render(m.list.View())
+}
+
+// SetItems updates the list with commands from the database
+func (m *ListModel) SetItems(commands []*domain.Command) {
+	items := make([]list.Item, 0, len(commands))
+	for _, cmd := range commands {
+		items = append(items, item{command: cmd})
+	}
+	m.list.SetItems(items)
+}
+
+// AddItem adds a command to the list
+func (m *ListModel) AddItem(cmd *domain.Command) {
+	m.list.InsertItem(0, item{command: cmd})
 }
