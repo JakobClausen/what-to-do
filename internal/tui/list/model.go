@@ -12,10 +12,9 @@ type item struct {
 }
 
 type ListModel struct {
-	list          list.Model
-	itemGenerator *randomItemGenerator
-	keys          *listKeyMap
-	delegateKeys  *delegateKeyMap
+	list         list.Model
+	keys         *listKeyMap
+	delegateKeys *delegateKeyMap
 }
 
 func (i item) Title() string       { return i.title }
@@ -62,16 +61,11 @@ func newListKeyMap() *listKeyMap {
 
 func NewListModel(title string) ListModel {
 	var (
-		itemGenerator randomItemGenerator
-		delegateKeys  = newDelegateKeyMap()
-		listKeys      = newListKeyMap()
+		delegateKeys = newDelegateKeyMap()
+		listKeys     = newListKeyMap()
 	)
 
-	const numItems = 24
-	items := make([]list.Item, numItems)
-	for i := range numItems {
-		items[i] = itemGenerator.next()
-	}
+	items := []list.Item{}
 
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
@@ -89,10 +83,9 @@ func NewListModel(title string) ListModel {
 	}
 
 	return ListModel{
-		list:          groceryList,
-		keys:          listKeys,
-		delegateKeys:  delegateKeys,
-		itemGenerator: &itemGenerator,
+		list:         groceryList,
+		keys:         listKeys,
+		delegateKeys: delegateKeys,
 	}
 }
 
@@ -137,12 +130,6 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.SetShowHelp(!m.list.ShowHelp())
 			return m, nil
 
-		case key.Matches(msg, m.keys.insertItem):
-			m.delegateKeys.remove.SetEnabled(true)
-			newItem := m.itemGenerator.next()
-			insCmd := m.list.InsertItem(0, newItem)
-			statusCmd := m.list.NewStatusMessage(statusMessageStyle("Added " + newItem.Title()))
-			return m, tea.Batch(insCmd, statusCmd)
 		}
 	}
 
