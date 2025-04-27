@@ -13,6 +13,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/inancgumus/screen"
 )
 
 // ListRefreshMsg is sent when the lists need to be refreshed with new data
@@ -65,21 +66,25 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle specific message types first
 	switch msg := msg.(type) {
 	case list.ExecuteCommandMsg:
-		// Clear screen and quit app
-		tea.ClearScreen()
+		// Save the command to run
+		commandToRun := msg.Command
 
-		// Execute the command in the shell
-		cmd := exec.Command("bash", "-c", msg.Command)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		// First quit the application
 		return m, tea.Sequence(
 			tea.Quit,
 			func() tea.Msg {
-				// Then execute the command
+				// Clear the screen using the screen package
+				screen.Clear()
+				screen.MoveTopLeft()
+
+				// Run the actual command
+				cmd := exec.Command("bash", "-c", commandToRun)
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
 				cmd.Run()
+
+				// Exit after command completes
+				os.Exit(0)
 				return nil
 			},
 		)
