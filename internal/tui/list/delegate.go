@@ -1,6 +1,9 @@
 package list
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -50,10 +53,13 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 
 				// Return a command that will send a message to delete this from the database
 				return tea.Sequence(
-					m.NewStatusMessage(statusMessageStyle("Deleted "+title)),
-					func() tea.Msg {
-						return DeleteCommandMsg{ID: commandID}
-					},
+					m.NewStatusMessage(StatusMessageStyle(FormatStatusMessage("Deleting "+title+"...", true))),
+					tea.Tick(time.Millisecond*800, func(time.Time) tea.Msg {
+						return DeleteCommandMsg{
+							ID:    commandID,
+							Title: title,
+						}
+					}),
 				)
 			}
 		}
@@ -72,6 +78,15 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	}
 
 	return d
+}
+
+func FormatStatusMessage(message string, success bool) string {
+	icon := "✓"
+	if !success {
+		icon = "✗"
+	}
+
+	return fmt.Sprintf(" %s %s ", icon, message)
 }
 
 type delegateKeyMap struct {

@@ -28,6 +28,7 @@ type CompositeModel struct {
 	ShowForm           bool
 	db                 *sqlite.Store
 	deletionInProgress bool
+	deletingTitle      string
 }
 
 func InitialModel(width int) CompositeModel {
@@ -104,7 +105,17 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Lists[0].SetItems(spotlightedCmds) // Spotlight list
 		m.Lists[1].SetItems(allCmds)         // All commands list
 
-		return m, nil
+		// If we were deleting an item, show a successful deletion message
+		if m.deletionInProgress && m.deletingTitle != "" {
+			activeTab := m.Column.ActiveTab()
+			cmds = append(cmds, m.Lists[activeTab].NewStatusMessage(
+				list.StatusMessageStyle(list.FormatStatusMessage("Deleted "+m.deletingTitle, true))))
+
+			m.deletionInProgress = false
+			m.deletingTitle = ""
+		}
+
+		return m, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
 		if !m.ShowForm && msg.String() == "n" {
@@ -119,18 +130,23 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.deletionInProgress = true
+		m.deletingTitle = msg.Title // Store the title of the command being deleted
 
 		// Delete the command from the database
 		ctx := context.Background()
 		err := m.db.Delete(ctx, msg.ID)
 		if err != nil {
 			fmt.Printf("Error deleting command: %v\n", err)
+			m.deletionInProgress = false
+
+			// Show error with styled message
+			activeTab := m.Column.ActiveTab()
+			return m, m.Lists[activeTab].NewStatusMessage(
+				list.ErrorMessageStyle(list.FormatStatusMessage("Error: "+err.Error(), false)))
 		}
 
 		// Start the refresh and immediately reset the flag
 		cmd := m.refreshLists()
-		m.deletionInProgress = false
-
 		return m, cmd
 
 	case tea.WindowSizeMsg:

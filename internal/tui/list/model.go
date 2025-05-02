@@ -19,7 +19,8 @@ type ExecuteCommandMsg struct {
 }
 
 type DeleteCommandMsg struct {
-	ID int64
+	ID    int64
+	Title string
 }
 
 type listKeyMap struct {
@@ -142,6 +143,9 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m ListModel) View() string {
 	return appStyle.Render(m.list.View())
+}
+func (m *ListModel) NewStatusMessage(message string) tea.Cmd {
+	return m.list.NewStatusMessage(message)
 }
 
 // SetItems updates the list with commands from the database
