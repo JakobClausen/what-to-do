@@ -29,8 +29,6 @@ func (m ColumnModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = 0
 		case "2":
 			m.activeTab = 1
-		case "q", "ctrl+c":
-			return m, tea.Quit
 		}
 	}
 	return m, nil

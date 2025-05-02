@@ -118,6 +118,15 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
+
+		switch msg.String() {
+		case "q", "ctrl+c":
+			return m, tea.Sequence(
+				CleanupTerminal, // Call your cleanup function
+				tea.Quit,
+			)
+		}
+
 		if !m.ShowForm && msg.String() == "n" {
 			m.ShowForm = true
 			m.Form = form.NewCommandForm() // Reset form
@@ -251,4 +260,12 @@ func (m CompositeModel) refreshLists() tea.Cmd {
 		// Return a message with the commands
 		return ListRefreshMsg{Commands: commands}
 	}
+}
+
+func CleanupTerminal() tea.Msg {
+	fmt.Print("\033[?1049l") // Exit alternate screen buffer
+	fmt.Print("\033[0m")     // Reset all attributes
+	screen.Clear()
+	screen.MoveTopLeft()
+	return nil
 }
