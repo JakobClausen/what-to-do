@@ -10,32 +10,30 @@ import (
 )
 
 type CommandForm struct {
-	CommandID   int64
 	Command     string
 	Alias       string
 	Description string
 	Spotlighted bool
 	form        *huh.Form
+	CommandID   int64 // Add this field to track which command is being updated
 }
 
+// NewCommandForm creates a new empty form
 func NewCommandForm() CommandForm {
-	var cmd string
-	var alias string
-	var desc string
+	return createForm("", "", "", false, 0)
+}
 
-	// Create a custom toggle component for spotlight selection
-	spotlightOptions := []string{"Yes", "No"}
-	initialSpotlight := 1 // Default to "No" (index 1)
+// NewUpdateForm creates a form pre-filled with command data
+func NewUpdateForm(cmd *domain.Command) CommandForm {
+	return createForm(cmd.Command, cmd.Alias, cmd.Description, cmd.Spotlighted, cmd.ID)
+}
 
-	spotlightToggle := huh.NewSelect[int]().
-		Key("spotlightIndex").
-		Title("Spotlight this command?").
-		Description("Spotlighted commands will appear in highlighted sections").
-		Options(
-			huh.NewOption(spotlightOptions[0], 0),
-			huh.NewOption(spotlightOptions[1], 1),
-		).
-		Value(&initialSpotlight)
+// createForm is a helper to create a form with the given values
+func createForm(command, alias, desc string, spotlight bool, id int64) CommandForm {
+	var cmd = command
+	var al = alias
+	var description = desc
+	var spotlighted = spotlight
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -55,7 +53,7 @@ func NewCommandForm() CommandForm {
 				Key("alias").
 				Title("Command Alias").
 				Placeholder("Enter a short alias for this command").
-				Value(&alias).
+				Value(&al).
 				Validate(func(str string) error {
 					if strings.TrimSpace(str) == "" {
 						return errors.New("Alias cannot be empty")
@@ -68,27 +66,24 @@ func NewCommandForm() CommandForm {
 				Title("Description (optional)").
 				Placeholder("What does this command do?").
 				CharLimit(200).
-				Value(&desc),
+				Value(&description),
 
-			spotlightToggle,
+			huh.NewConfirm().
+				Key("spotlighted").
+				Title("Spotlight this command?").
+				Description("Spotlighted commands will appear in highlighted sections").
+				Value(&spotlighted),
 		),
 	)
 
 	return CommandForm{
 		Command:     cmd,
-		Alias:       alias,
-		Description: desc,
-		Spotlighted: false, // We'll set this when the form is completed
+		Alias:       al,
+		Description: description,
+		Spotlighted: spotlighted,
 		form:        form,
+		CommandID:   id,
 	}
-}
-
-func (f *CommandForm) PopulateWithCommand(cmd *domain.Command) {
-	f.Command = cmd.Command
-	f.Alias = cmd.Alias
-	f.Description = cmd.Description
-	f.Spotlighted = cmd.Spotlighted
-	f.CommandID = cmd.ID // Add this field to track the ID of command being updated
 }
 
 func (f CommandForm) Init() tea.Cmd {
@@ -105,10 +100,7 @@ func (f CommandForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			f.Command = f.form.GetString("command")
 			f.Alias = f.form.GetString("alias")
 			f.Description = f.form.GetString("description")
-
-			// Convert the spotlight index to boolean
-			spotlightIndex := f.form.GetInt("spotlightIndex")
-			f.Spotlighted = spotlightIndex == 0 // 0 = Yes, 1 = No
+			f.Spotlighted = f.form.GetBool("spotlighted")
 		}
 	}
 
@@ -127,6 +119,7 @@ func (f CommandForm) IsCancelled() bool {
 	return f.form.State == huh.StateAborted
 }
 
+// IsUpdating returns whether the form is for updating an existing command
 func (f CommandForm) IsUpdating() bool {
 	return f.CommandID > 0
 }

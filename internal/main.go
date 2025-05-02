@@ -182,9 +182,8 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case list.UpdateCommandMsg:
 		m.ShowForm = true
-		m.Form = form.NewCommandForm()          // Create a new form
-		m.Form.PopulateWithCommand(msg.Command) // Populate with existing data
-		m.isUpdating = true                     // Set the flag
+		m.Form = form.NewUpdateForm(msg.Command) // Use the new form constructor that pre-fills the values
+		m.isUpdating = true
 		return m, m.Form.Init()
 	}
 
@@ -206,25 +205,23 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var err error
 
 			if m.Form.IsUpdating() {
-				// Updating an existing command
+				// Set the ID for updates
 				command.ID = m.Form.CommandID
 				err = m.db.Update(ctx, command)
 				if err != nil {
 					fmt.Println("Failed to update command:", err)
 				} else {
-					// Show success message
+					// Show success message and refresh
 					activeTab := m.Column.ActiveTab()
 					cmds = append(cmds, m.Lists[activeTab].NewStatusMessage(
 						list.StatusMessageStyle(list.FormatStatusMessage("Updated "+command.Alias, true))))
-
-					// Refresh the lists
 					cmds = append(cmds, m.refreshLists())
 				}
 			} else {
-				// Creating a new command
+				// Create new command
 				_, err = m.db.Create(ctx, command)
 				if err != nil {
-					fmt.Println("Failed to save command:", err)
+					fmt.Println("Failed to create command:", err)
 				} else {
 					cmds = append(cmds, m.refreshLists())
 				}
