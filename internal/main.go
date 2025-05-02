@@ -22,11 +22,12 @@ type ListRefreshMsg struct {
 }
 
 type CompositeModel struct {
-	Column   column.ColumnModel
-	Lists    []*list.ListModel
-	Form     form.CommandForm
-	ShowForm bool
-	db       *sqlite.Store // Database reference
+	Column             column.ColumnModel
+	Lists              []*list.ListModel
+	Form               form.CommandForm
+	ShowForm           bool
+	db                 *sqlite.Store
+	deletionInProgress bool
 }
 
 func InitialModel(width int) CompositeModel {
@@ -112,17 +113,25 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.Form.Init()
 		}
 	case list.DeleteCommandMsg:
+		// Prevent multiple deletions at once
+		if m.deletionInProgress {
+			return m, nil
+		}
+
+		m.deletionInProgress = true
+
 		// Delete the command from the database
 		ctx := context.Background()
 		err := m.db.Delete(ctx, msg.ID)
 		if err != nil {
-			// Handle error (you might want to display this to the user)
-			fmt.Println("Failed to delete command:", err)
-		} else {
-			// Command deleted successfully, refresh lists
-			cmds = append(cmds, m.refreshLists())
+			fmt.Printf("Error deleting command: %v\n", err)
 		}
-		return m, tea.Batch(cmds...)
+
+		// Start the refresh and immediately reset the flag
+		cmd := m.refreshLists()
+		m.deletionInProgress = false
+
+		return m, cmd
 
 	case tea.WindowSizeMsg:
 		m.Column = column.CreateColumnModel(msg.Width)

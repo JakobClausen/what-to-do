@@ -36,7 +36,6 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				return nil
 
 			case key.Matches(msg, keys.remove):
-				index := m.Index()
 				item, ok := m.SelectedItem().(item)
 				if !ok {
 					return nil
@@ -45,8 +44,6 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				title = item.Title()
 				commandID := item.ID()
 
-				// Remove from the UI list
-				m.RemoveItem(index)
 				if len(m.Items()) == 0 {
 					keys.remove.SetEnabled(false)
 				}
