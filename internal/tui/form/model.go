@@ -20,7 +20,20 @@ func NewCommandForm() CommandForm {
 	var cmd string
 	var alias string
 	var desc string
-	var spotlight bool
+
+	// Create a custom toggle component for spotlight selection
+	spotlightOptions := []string{"Yes", "No"}
+	initialSpotlight := 1 // Default to "No" (index 1)
+
+	spotlightToggle := huh.NewSelect[int]().
+		Key("spotlightIndex").
+		Title("Spotlight this command?").
+		Description("Spotlighted commands will appear in highlighted sections").
+		Options(
+			huh.NewOption(spotlightOptions[0], 0),
+			huh.NewOption(spotlightOptions[1], 1),
+		).
+		Value(&initialSpotlight)
 
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -55,11 +68,7 @@ func NewCommandForm() CommandForm {
 				CharLimit(200).
 				Value(&desc),
 
-			huh.NewConfirm().
-				Key("spotlighted").
-				Title("Spotlight this command?").
-				Description("Spotlighted commands will appear in highlighted sections").
-				Value(&spotlight),
+			spotlightToggle,
 		),
 	)
 
@@ -67,7 +76,7 @@ func NewCommandForm() CommandForm {
 		Command:     cmd,
 		Alias:       alias,
 		Description: desc,
-		Spotlighted: spotlight,
+		Spotlighted: false, // We'll set this when the form is completed
 		form:        form,
 	}
 }
@@ -86,7 +95,10 @@ func (f CommandForm) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			f.Command = f.form.GetString("command")
 			f.Alias = f.form.GetString("alias")
 			f.Description = f.form.GetString("description")
-			f.Spotlighted = f.form.GetBool("spotlighted")
+
+			// Convert the spotlight index to boolean
+			spotlightIndex := f.form.GetInt("spotlightIndex")
+			f.Spotlighted = spotlightIndex == 0 // 0 = Yes, 1 = No
 		}
 	}
 
