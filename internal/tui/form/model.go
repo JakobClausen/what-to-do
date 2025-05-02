@@ -3,12 +3,14 @@ package form
 import (
 	"errors"
 	"strings"
+	"what-to-do/internal/domain"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 )
 
 type CommandForm struct {
+	CommandID   int64
 	Command     string
 	Alias       string
 	Description string
@@ -81,6 +83,14 @@ func NewCommandForm() CommandForm {
 	}
 }
 
+func (f *CommandForm) PopulateWithCommand(cmd *domain.Command) {
+	f.Command = cmd.Command
+	f.Alias = cmd.Alias
+	f.Description = cmd.Description
+	f.Spotlighted = cmd.Spotlighted
+	f.CommandID = cmd.ID // Add this field to track the ID of command being updated
+}
+
 func (f CommandForm) Init() tea.Cmd {
 	return f.form.Init()
 }
@@ -115,4 +125,8 @@ func (f CommandForm) IsCompleted() bool {
 
 func (f CommandForm) IsCancelled() bool {
 	return f.form.State == huh.StateAborted
+}
+
+func (f CommandForm) IsUpdating() bool {
+	return f.CommandID > 0
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type ListModel struct {
@@ -14,10 +15,17 @@ type ListModel struct {
 	delegateKeys *delegateKeyMap
 }
 
+// ExecuteCommandMsg is sent when a command should be executed
 type ExecuteCommandMsg struct {
 	Command string
 }
 
+// UpdateCommandMsg is sent when a command should be updated
+type UpdateCommandMsg struct {
+	Command *domain.Command
+}
+
+// DeleteCommandMsg is sent when a command should be deleted
 type DeleteCommandMsg struct {
 	ID    int64
 	Title string
@@ -71,8 +79,22 @@ func NewListModel(title string) ListModel {
 
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
-	groceryList.Title = title
-	groceryList.Styles.Title = titleStyle
+
+	// Create a styled title with delete and update instructions
+	styledTitle := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		titleStyle.Render(title),
+		lipgloss.NewStyle().
+			Foreground(lipgloss.AdaptiveColor{Light: "#B2B2B2", Dark: "#676767"}).
+			Background(lipgloss.Color("#EFEFEF")).
+			Padding(0, 1).
+			MarginLeft(2).
+			Render("press x to delete, u to update"),
+	)
+
+	groceryList.Title = styledTitle
+	groceryList.Styles.Title = lipgloss.NewStyle() // Use empty style as we've already styled the title
+
 	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.toggleSpinner,
@@ -144,8 +166,15 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ListModel) View() string {
 	return appStyle.Render(m.list.View())
 }
+
+// NewStatusMessage creates a new status message
 func (m *ListModel) NewStatusMessage(message string) tea.Cmd {
 	return m.list.NewStatusMessage(message)
+}
+
+// Toggle the spinner in the list
+func (m *ListModel) ToggleSpinner() tea.Cmd {
+	return m.list.ToggleSpinner()
 }
 
 // SetItems updates the list with commands from the database

@@ -61,6 +61,20 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 						}
 					}),
 				)
+
+			case key.Matches(msg, keys.update):
+				item, ok := m.SelectedItem().(item)
+				if !ok {
+					return nil
+				}
+
+				cmd := item.Command()
+				if cmd != nil {
+					return func() tea.Msg {
+						return UpdateCommandMsg{Command: cmd}
+					}
+				}
+				return nil
 			}
 		}
 
@@ -92,24 +106,23 @@ func FormatStatusMessage(message string, success bool) string {
 type delegateKeyMap struct {
 	choose key.Binding
 	remove key.Binding
+	update key.Binding
 }
 
-// Additional short help entries. This satisfies the help.KeyMap interface and
-// is entirely optional.
 func (d delegateKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		d.choose,
 		d.remove,
+		d.update,
 	}
 }
 
-// Additional full help entries. This satisfies the help.KeyMap interface and
-// is entirely optional.
 func (d delegateKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{
 			d.choose,
 			d.remove,
+			d.update,
 		},
 	}
 }
@@ -123,6 +136,10 @@ func newDelegateKeyMap() *delegateKeyMap {
 		remove: key.NewBinding(
 			key.WithKeys("x", "backspace"),
 			key.WithHelp("x", "delete"),
+		),
+		update: key.NewBinding(
+			key.WithKeys("u"),
+			key.WithHelp("u", "update"),
 		),
 	}
 }

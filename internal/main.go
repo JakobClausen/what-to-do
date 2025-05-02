@@ -29,6 +29,7 @@ type CompositeModel struct {
 	db                 *sqlite.Store
 	deletionInProgress bool
 	deletingTitle      string
+	isUpdating         bool
 }
 
 func InitialModel(width int) CompositeModel {
@@ -178,6 +179,13 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		return m, tea.Batch(cmds...)
+
+	case list.UpdateCommandMsg:
+		m.ShowForm = true
+		m.Form = form.NewCommandForm()          // Create a new form
+		m.Form.PopulateWithCommand(msg.Command) // Populate with existing data
+		m.isUpdating = true                     // Set the flag
+		return m, m.Form.Init()
 	}
 
 	// Handle form updates when form is showing
@@ -186,7 +194,7 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Form = updatedForm.(form.CommandForm)
 
 		if m.Form.IsCompleted() {
-			// Convert form data to domain.Command
+			// Create or update command based on the form data
 			command := &domain.Command{
 				Command:     m.Form.Command,
 				Alias:       m.Form.Alias,
@@ -194,18 +202,36 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				Spotlighted: m.Form.Spotlighted,
 			}
 
-			// Save to database
 			ctx := context.Background()
-			_, err := m.db.Create(ctx, command)
-			if err != nil {
-				// Handle error (you might want to display this to the user)
-				fmt.Println("Failed to save command:", err)
+			var err error
+
+			if m.Form.IsUpdating() {
+				// Updating an existing command
+				command.ID = m.Form.CommandID
+				err = m.db.Update(ctx, command)
+				if err != nil {
+					fmt.Println("Failed to update command:", err)
+				} else {
+					// Show success message
+					activeTab := m.Column.ActiveTab()
+					cmds = append(cmds, m.Lists[activeTab].NewStatusMessage(
+						list.StatusMessageStyle(list.FormatStatusMessage("Updated "+command.Alias, true))))
+
+					// Refresh the lists
+					cmds = append(cmds, m.refreshLists())
+				}
 			} else {
-				// Command saved successfully, refresh lists
-				cmds = append(cmds, m.refreshLists())
+				// Creating a new command
+				_, err = m.db.Create(ctx, command)
+				if err != nil {
+					fmt.Println("Failed to save command:", err)
+				} else {
+					cmds = append(cmds, m.refreshLists())
+				}
 			}
 
 			m.ShowForm = false
+			m.isUpdating = false
 			return m, tea.Batch(cmds...)
 		}
 
