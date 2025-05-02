@@ -111,6 +111,18 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Form = form.NewCommandForm() // Reset form
 			return m, m.Form.Init()
 		}
+	case list.DeleteCommandMsg:
+		// Delete the command from the database
+		ctx := context.Background()
+		err := m.db.Delete(ctx, msg.ID)
+		if err != nil {
+			// Handle error (you might want to display this to the user)
+			fmt.Println("Failed to delete command:", err)
+		} else {
+			// Command deleted successfully, refresh lists
+			cmds = append(cmds, m.refreshLists())
+		}
+		return m, tea.Batch(cmds...)
 
 	case tea.WindowSizeMsg:
 		m.Column = column.CreateColumnModel(msg.Width)

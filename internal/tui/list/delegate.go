@@ -37,11 +37,27 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 
 			case key.Matches(msg, keys.remove):
 				index := m.Index()
+				item, ok := m.SelectedItem().(item)
+				if !ok {
+					return nil
+				}
+
+				title = item.Title()
+				commandID := item.ID()
+
+				// Remove from the UI list
 				m.RemoveItem(index)
 				if len(m.Items()) == 0 {
 					keys.remove.SetEnabled(false)
 				}
-				return m.NewStatusMessage(statusMessageStyle("Deleted " + title))
+
+				// Return a command that will send a message to delete this from the database
+				return tea.Sequence(
+					m.NewStatusMessage(statusMessageStyle("Deleted "+title)),
+					func() tea.Msg {
+						return DeleteCommandMsg{ID: commandID}
+					},
+				)
 			}
 		}
 

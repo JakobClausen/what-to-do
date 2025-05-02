@@ -17,6 +17,10 @@ func (i item) Title() string {
 	return i.command.Alias
 }
 
+func (i item) ID() int64 {
+	return i.command.ID
+}
+
 // Description returns the command description
 func (i item) Description() string {
 	if i.command == nil {

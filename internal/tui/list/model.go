@@ -18,6 +18,10 @@ type ExecuteCommandMsg struct {
 	Command string
 }
 
+type DeleteCommandMsg struct {
+	ID int64
+}
+
 type listKeyMap struct {
 	toggleSpinner    key.Binding
 	toggleTitleBar   key.Binding
