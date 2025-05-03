@@ -44,7 +44,7 @@ func newListKeyMap() *listKeyMap {
 	return &listKeyMap{
 		insertItem: key.NewBinding(
 			key.WithKeys("a"),
-			key.WithHelp("a", "add item"),
+			key.WithHelp("a", "add new command"),
 		),
 		toggleSpinner: key.NewBinding(
 			key.WithKeys("s"),
@@ -80,29 +80,19 @@ func NewListModel(title string) ListModel {
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
 
-	// Create a styled title with delete and update instructions
 	styledTitle := lipgloss.JoinHorizontal(
 		lipgloss.Left,
 		titleStyle.Render(title),
-		lipgloss.NewStyle().
-			Foreground(lipgloss.AdaptiveColor{Light: "#B2B2B2", Dark: "#676767"}).
-			Background(lipgloss.Color("#EFEFEF")).
-			Padding(0, 1).
-			MarginLeft(2).
-			Render("press x to delete, u to update"),
 	)
 
 	groceryList.Title = styledTitle
-	groceryList.Styles.Title = lipgloss.NewStyle() // Use empty style as we've already styled the title
+	groceryList.Styles.Title = lipgloss.NewStyle()
 
 	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
-			listKeys.toggleSpinner,
-			listKeys.insertItem,
-			listKeys.toggleTitleBar,
-			listKeys.toggleStatusBar,
-			listKeys.togglePagination,
-			listKeys.toggleHelpMenu,
+			delegateKeys.choose,
+			delegateKeys.remove,
+			delegateKeys.update,
 		}
 	}
 

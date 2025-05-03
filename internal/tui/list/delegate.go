@@ -131,15 +131,15 @@ func newDelegateKeyMap() *delegateKeyMap {
 	return &delegateKeyMap{
 		choose: key.NewBinding(
 			key.WithKeys("enter"),
-			key.WithHelp("enter", "choose"),
+			key.WithHelp("enter", "execute command"),
 		),
 		remove: key.NewBinding(
 			key.WithKeys("x", "backspace"),
-			key.WithHelp("x", "delete"),
+			key.WithHelp("x", "delete command"),
 		),
 		update: key.NewBinding(
 			key.WithKeys("u"),
-			key.WithHelp("u", "update"),
+			key.WithHelp("u", "update command"),
 		),
 	}
 }
