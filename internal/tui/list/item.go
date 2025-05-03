@@ -23,11 +23,11 @@ func (i item) Description() string {
 	if i.command == nil {
 		return ""
 	}
-	return i.command.Description
+	return ItemDescStyle.Render(i.command.Description)
 }
 
 func (i item) FilterValue() string {
-	return i.Title()
+	return i.command.Alias
 }
 
 func (i item) Command() *domain.Command {

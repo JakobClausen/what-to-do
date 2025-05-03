@@ -5,7 +5,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type ListModel struct {
@@ -26,29 +25,25 @@ type DeleteCommandMsg struct {
 	Title string
 }
 
-func NewListModel(title string) ListModel {
+func NewListModel() ListModel {
 	delegateKeys := newDelegateKeyMap()
 	items := []list.Item{}
 
 	delegate := newItemDelegate(delegateKeys)
-	groceryList := list.New(items, delegate, 0, 0)
+	commandList := list.New(items, delegate, 0, 0)
 
-	styledTitle := lipgloss.JoinHorizontal(
-		lipgloss.Left,
-		titleStyle.Render(title),
-	)
+	commandList.SetFilteringEnabled(false)
+	commandList.SetShowFilter(false)
+	commandList.SetShowHelp(true)
+	commandList.KeyMap.ShowFullHelp.SetEnabled(false)
+	commandList.KeyMap.Filter.SetEnabled(false)
 
-	groceryList.Title = styledTitle
-	groceryList.Styles.Title = lipgloss.NewStyle()
-
-	groceryList.SetFilteringEnabled(false)
-	groceryList.SetShowFilter(false)
-	groceryList.SetShowHelp(true)
-	groceryList.KeyMap.ShowFullHelp.SetEnabled(false)
-	groceryList.KeyMap.Filter.SetEnabled(false)
+	// Add these two lines to hide the title and item count
+	commandList.SetShowTitle(false)
+	commandList.SetShowStatusBar(false)
 
 	return ListModel{
-		list:         groceryList,
+		list:         commandList,
 		delegateKeys: delegateKeys,
 	}
 }

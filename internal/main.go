@@ -37,8 +37,8 @@ func InitialModel(width int) CompositeModel {
 		panic(err)
 	}
 
-	spotlightList := list.NewListModel("Spotlight Items")
-	allCommandsList := list.NewListModel("All Commands")
+	spotlightList := list.NewListModel()
+	allCommandsList := list.NewListModel()
 
 	return CompositeModel{
 		Lists:    []*list.ListModel{&spotlightList, &allCommandsList},

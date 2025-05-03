@@ -11,6 +11,14 @@ import (
 
 func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
+	// Important: Set a fixed spacing
+	d.ShowDescription = true
+	d.SetSpacing(1) // Set a consistent spacing between items
+
+	d.Styles.SelectedTitle = SelectedItemStyle.Copy()
+	d.Styles.SelectedDesc = SelectedDescStyle.Copy()
+	d.Styles.NormalTitle = ItemTitleStyle.Copy()
+	d.Styles.NormalDesc = ItemDescStyle.Copy()
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var title string
