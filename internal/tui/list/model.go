@@ -11,7 +11,6 @@ import (
 
 type ListModel struct {
 	list         list.Model
-	keys         *listKeyMap
 	delegateKeys *delegateKeyMap
 }
 
@@ -40,41 +39,8 @@ type listKeyMap struct {
 	insertItem       key.Binding
 }
 
-func newListKeyMap() *listKeyMap {
-	return &listKeyMap{
-		insertItem: key.NewBinding(
-			key.WithKeys("a"),
-			key.WithHelp("a", "add new command"),
-		),
-		toggleSpinner: key.NewBinding(
-			key.WithKeys("s"),
-			key.WithHelp("s", "toggle spinner"),
-		),
-		toggleTitleBar: key.NewBinding(
-			key.WithKeys("T"),
-			key.WithHelp("T", "toggle title"),
-		),
-		toggleStatusBar: key.NewBinding(
-			key.WithKeys("S"),
-			key.WithHelp("S", "toggle status"),
-		),
-		togglePagination: key.NewBinding(
-			key.WithKeys("P"),
-			key.WithHelp("P", "toggle pagination"),
-		),
-		toggleHelpMenu: key.NewBinding(
-			key.WithKeys("H"),
-			key.WithHelp("H", "toggle help"),
-		),
-	}
-}
-
 func NewListModel(title string) ListModel {
-	var (
-		delegateKeys = newDelegateKeyMap()
-		listKeys     = newListKeyMap()
-	)
-
+	delegateKeys := newDelegateKeyMap()
 	items := []list.Item{}
 
 	delegate := newItemDelegate(delegateKeys)
@@ -88,17 +54,17 @@ func NewListModel(title string) ListModel {
 	groceryList.Title = styledTitle
 	groceryList.Styles.Title = lipgloss.NewStyle()
 
-	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{
-			delegateKeys.choose,
-			delegateKeys.remove,
-			delegateKeys.update,
-		}
-	}
+	// Keep show help but disable other features
+	groceryList.SetFilteringEnabled(false)
+	groceryList.SetShowFilter(false)
+	groceryList.SetShowHelp(true)
+
+	// Disable the built-in help items we don't want
+	groceryList.KeyMap.ShowFullHelp.SetEnabled(false)
+	groceryList.KeyMap.Filter.SetEnabled(false)
 
 	return ListModel{
 		list:         groceryList,
-		keys:         listKeys,
 		delegateKeys: delegateKeys,
 	}
 }
@@ -114,36 +80,6 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
-
-	case tea.KeyMsg:
-		if m.list.FilterState() == list.Filtering {
-			break
-		}
-
-		switch {
-		case key.Matches(msg, m.keys.toggleSpinner):
-			cmd := m.list.ToggleSpinner()
-			return m, cmd
-
-		case key.Matches(msg, m.keys.toggleTitleBar):
-			v := !m.list.ShowTitle()
-			m.list.SetShowTitle(v)
-			m.list.SetShowFilter(v)
-			m.list.SetFilteringEnabled(v)
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleStatusBar):
-			m.list.SetShowStatusBar(!m.list.ShowStatusBar())
-			return m, nil
-
-		case key.Matches(msg, m.keys.togglePagination):
-			m.list.SetShowPagination(!m.list.ShowPagination())
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleHelpMenu):
-			m.list.SetShowHelp(!m.list.ShowHelp())
-			return m, nil
-		}
 	}
 
 	newListModel, cmd := m.list.Update(msg)

@@ -123,16 +123,23 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Sequence(
-				CleanupTerminal, // Call your cleanup function
+				CleanupTerminal,
 				tea.Quit,
 			)
+		case "a":
+			if !m.ShowForm {
+				m.ShowForm = true
+				m.Form = form.NewCommandForm()
+				return m, m.Form.Init()
+			}
+		case "n":
+			if !m.ShowForm {
+				m.ShowForm = true
+				m.Form = form.NewCommandForm()
+				return m, m.Form.Init()
+			}
 		}
 
-		if !m.ShowForm && msg.String() == "n" {
-			m.ShowForm = true
-			m.Form = form.NewCommandForm() // Reset form
-			return m, m.Form.Init()
-		}
 	case list.DeleteCommandMsg:
 		// Prevent multiple deletions at once
 		if m.deletionInProgress {

@@ -63,13 +63,16 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				)
 
 			case key.Matches(msg, keys.update):
+				// Get the selected item
 				item, ok := m.SelectedItem().(item)
 				if !ok {
 					return nil
 				}
 
+				// Get the command to update
 				cmd := item.Command()
 				if cmd != nil {
+					// Return a command that will send a message to update this command
 					return func() tea.Msg {
 						return UpdateCommandMsg{Command: cmd}
 					}
@@ -81,14 +84,14 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		return nil
 	}
 
-	help := []key.Binding{keys.choose, keys.remove}
-
+	// Use the keys.ShortHelp() and keys.FullHelp() methods directly
+	// This ensures we get all keys in the correct order
 	d.ShortHelpFunc = func() []key.Binding {
-		return help
+		return keys.ShortHelp()
 	}
 
 	d.FullHelpFunc = func() [][]key.Binding {
-		return [][]key.Binding{help}
+		return keys.FullHelp()
 	}
 
 	return d
@@ -105,15 +108,17 @@ func FormatStatusMessage(message string, success bool) string {
 
 type delegateKeyMap struct {
 	choose key.Binding
-	remove key.Binding
+	add    key.Binding
 	update key.Binding
+	remove key.Binding
 }
 
 func (d delegateKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		d.choose,
-		d.remove,
+		d.add,
 		d.update,
+		d.remove,
 	}
 }
 
@@ -121,8 +126,9 @@ func (d delegateKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{
 			d.choose,
-			d.remove,
+			d.add,
 			d.update,
+			d.remove,
 		},
 	}
 }
@@ -131,15 +137,19 @@ func newDelegateKeyMap() *delegateKeyMap {
 	return &delegateKeyMap{
 		choose: key.NewBinding(
 			key.WithKeys("enter"),
-			key.WithHelp("enter", "execute command"),
+			key.WithHelp("enter", "execute"),
 		),
-		remove: key.NewBinding(
-			key.WithKeys("x", "backspace"),
-			key.WithHelp("x", "delete command"),
+		add: key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "add"),
 		),
 		update: key.NewBinding(
 			key.WithKeys("u"),
-			key.WithHelp("u", "update command"),
+			key.WithHelp("u", "update"),
+		),
+		remove: key.NewBinding(
+			key.WithKeys("x", "backspace"),
+			key.WithHelp("x", "delete"),
 		),
 	}
 }
