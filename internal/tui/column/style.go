@@ -2,12 +2,6 @@ package column
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/gamut"
-)
-
-const (
-	Width       = 96
-	ColumnWidth = 30
 )
 
 var (
@@ -15,7 +9,6 @@ var (
 	subtle    = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
 	highlight = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
-	blends    = gamut.Blends(lipgloss.Color("#F25D94"), lipgloss.Color("#EDFF82"), 50)
 
 	base = lipgloss.NewStyle().Foreground(normal)
 

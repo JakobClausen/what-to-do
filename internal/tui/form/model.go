@@ -14,21 +14,18 @@ type CommandForm struct {
 	Alias       string
 	Description string
 	Spotlighted bool
+	CommandID   int64
 	form        *huh.Form
-	CommandID   int64 // Add this field to track which command is being updated
 }
 
-// NewCommandForm creates a new empty form
 func NewCommandForm() CommandForm {
 	return createForm("", "", "", false, 0)
 }
 
-// NewUpdateForm creates a form pre-filled with command data
 func NewUpdateForm(cmd *domain.Command) CommandForm {
 	return createForm(cmd.Command, cmd.Alias, cmd.Description, cmd.Spotlighted, cmd.ID)
 }
 
-// createForm is a helper to create a form with the given values
 func createForm(command, alias, desc string, spotlight bool, id int64) CommandForm {
 	var cmd = command
 	var al = alias
@@ -76,13 +73,15 @@ func createForm(command, alias, desc string, spotlight bool, id int64) CommandFo
 		),
 	)
 
+	form = form.WithTheme(huh.ThemeCharm())
+
 	return CommandForm{
 		Command:     cmd,
 		Alias:       al,
 		Description: description,
 		Spotlighted: spotlighted,
-		form:        form,
 		CommandID:   id,
+		form:        form,
 	}
 }
 
@@ -119,7 +118,6 @@ func (f CommandForm) IsCancelled() bool {
 	return f.form.State == huh.StateAborted
 }
 
-// IsUpdating returns whether the form is for updating an existing command
 func (f CommandForm) IsUpdating() bool {
 	return f.CommandID > 0
 }

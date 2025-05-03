@@ -43,7 +43,7 @@ func InitialModel(width int) CompositeModel {
 
 	return CompositeModel{
 		Lists:    []*list.ListModel{&spotlightList, &allCommandsList}, // Store pointers
-		Column:   column.CreateColumnModel(width),
+		Column:   column.New(width),
 		Form:     form.NewCommandForm(),
 		ShowForm: false,
 		db:       db,
@@ -167,7 +167,7 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.WindowSizeMsg:
-		m.Column = column.CreateColumnModel(msg.Width)
+		m.Column = column.New(msg.Width)
 		columnHeight := lipgloss.Height(m.Column.View())
 
 		listMsg := tea.WindowSizeMsg{

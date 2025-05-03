@@ -10,7 +10,6 @@ import (
 type ColumnModel struct {
 	activeTab int
 	width     int
-	Height    int
 }
 
 func (m ColumnModel) Init() tea.Cmd {
@@ -51,17 +50,25 @@ func (m ColumnModel) View() string {
 			ActiveTab.Render("All cmds"),
 		)
 	}
-	gap := TabGap.Render(strings.Repeat(" ", max(0, m.width-lipgloss.Width(row)-2)))
+
+	gapWidth := max(0, m.width-lipgloss.Width(row)-2)
+	gap := TabGap.Render(strings.Repeat(" ", gapWidth))
 	row = lipgloss.JoinHorizontal(lipgloss.Bottom, row, gap)
 	doc.WriteString(row)
 
 	return DocStyle.MaxWidth(m.width).Render(doc.String())
 }
 
-func CreateColumnModel(width int) ColumnModel {
-
+func New(width int) ColumnModel {
 	return ColumnModel{
 		activeTab: 0,
 		width:     width,
 	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
