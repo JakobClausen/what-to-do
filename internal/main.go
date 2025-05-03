@@ -68,22 +68,24 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case list.ExecuteCommandMsg:
 		commandToRun := msg.Command
 
-		return m, tea.Sequence(
-			tea.Quit,
-			func() tea.Msg {
-				screen.Clear()
-				screen.MoveTopLeft()
+		return m, func() tea.Msg {
+			screen.Clear()
+			screen.MoveTopLeft()
 
-				cmd := exec.Command("bash", "-c", commandToRun)
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				cmd.Run()
+			tea.Quit()
 
-				os.Exit(0)
-				return nil
-			},
-		)
+			cmd := exec.Command("bash", "-c", commandToRun)
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				fmt.Printf("Command execution error: %v\n", err)
+			}
+
+			os.Exit(0)
+			return nil
+		}
 
 	case ListRefreshMsg:
 		spotlightedCmds := []*domain.Command{}
