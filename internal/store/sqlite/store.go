@@ -14,28 +14,28 @@ import (
 
 var _ store.CommandStore = (*Store)(nil)
 
-type Store struct{ db *sql.DB }
+type Store struct {
+	db *sql.DB
+}
 
 func New() (*Store, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
+
 	appDir := filepath.Join(homeDir, ".what-to-do", "store")
 	if err = os.MkdirAll(appDir, 0755); err != nil {
 		return nil, err
 	}
 
 	dbPath := filepath.Join(appDir, "store.sqlite")
-
 	db, err := sql.Open("sqlite", dbPath)
-
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Store{db: db}
-
 	return s, s.migrate()
 }
 
@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS commands (
 	return err
 }
 
-func (s *Store) Close() error { return s.db.Close() }
+func (s *Store) Close() error {
+	return s.db.Close()
+}
 
 func (s *Store) Create(ctx context.Context, c *domain.Command) (int64, error) {
 	res, err := s.db.ExecContext(
@@ -113,8 +115,8 @@ func (s *Store) List(ctx context.Context) ([]*domain.Command, error) {
 func (s *Store) Update(ctx context.Context, c *domain.Command) error {
 	_, err := s.db.ExecContext(
 		ctx,
-		`UPDATE commands SET alias = ?, description = ?, command = ?, spotlighted = ?, updated_at = CURRENT_TIMESTAMP
-		  WHERE id = ?`,
+		`UPDATE commands SET alias = ?, description = ?, command = ?, spotlighted = ?,
+		 updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
 		c.Alias, c.Description, c.Command, c.Spotlighted, c.ID,
 	)
 	return err

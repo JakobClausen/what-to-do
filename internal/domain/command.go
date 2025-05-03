@@ -11,5 +11,3 @@ type Command struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
-
-func (c Command) IsValid() bool { return c.Alias != "" }
