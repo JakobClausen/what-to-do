@@ -12,7 +12,6 @@ var (
 			Background(lipgloss.Color("#25A065")).
 			Padding(0, 1)
 
-	// Export these styles by capitalizing them
 	StatusMessageStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"}).
 				Background(lipgloss.AdaptiveColor{Light: "#EAF6F2", Dark: "#1B312C"}).

@@ -25,12 +25,9 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
-				// Get the selected item
 				if i, ok := m.SelectedItem().(item); ok {
-					// Get the actual command to execute
 					cmd := i.Command()
 					if cmd != nil {
-						// Return a command that will send a message to run this command
 						return func() tea.Msg {
 							return ExecuteCommandMsg{Command: cmd.Command}
 						}
@@ -51,7 +48,6 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 					keys.remove.SetEnabled(false)
 				}
 
-				// Return a command that will send a message to delete this from the database
 				return tea.Sequence(
 					m.NewStatusMessage(StatusMessageStyle(FormatStatusMessage("Deleting "+title+"...", true))),
 					tea.Tick(time.Millisecond*800, func(time.Time) tea.Msg {
@@ -63,16 +59,13 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				)
 
 			case key.Matches(msg, keys.update):
-				// Get the selected item
 				item, ok := m.SelectedItem().(item)
 				if !ok {
 					return nil
 				}
 
-				// Get the command to update
 				cmd := item.Command()
 				if cmd != nil {
-					// Return a command that will send a message to update this command
 					return func() tea.Msg {
 						return UpdateCommandMsg{Command: cmd}
 					}
@@ -84,8 +77,6 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		return nil
 	}
 
-	// Use the keys.ShortHelp() and keys.FullHelp() methods directly
-	// This ensures we get all keys in the correct order
 	d.ShortHelpFunc = func() []key.Binding {
 		return keys.ShortHelp()
 	}

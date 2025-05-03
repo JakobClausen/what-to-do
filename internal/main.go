@@ -16,7 +16,6 @@ import (
 	"github.com/inancgumus/screen"
 )
 
-// ListRefreshMsg is sent when the lists need to be refreshed with new data
 type ListRefreshMsg struct {
 	Commands []*domain.Command
 }
@@ -42,7 +41,7 @@ func InitialModel(width int) CompositeModel {
 	allCommandsList := list.NewListModel("All Commands")
 
 	return CompositeModel{
-		Lists:    []*list.ListModel{&spotlightList, &allCommandsList}, // Store pointers
+		Lists:    []*list.ListModel{&spotlightList, &allCommandsList},
 		Column:   column.New(width),
 		Form:     form.NewCommandForm(),
 		ShowForm: false,
@@ -57,7 +56,6 @@ func (m CompositeModel) Init() tea.Cmd {
 		cmds = append(cmds, m.Lists[i].Init())
 	}
 
-	// Add an initial list refresh command
 	cmds = append(cmds, m.refreshLists())
 
 	return tea.Batch(cmds...)
@@ -66,31 +64,27 @@ func (m CompositeModel) Init() tea.Cmd {
 func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
-	// Handle specific message types first
 	switch msg := msg.(type) {
 	case list.ExecuteCommandMsg:
-		// Save the command to run
 		commandToRun := msg.Command
 
 		return m, tea.Sequence(
 			tea.Quit,
 			func() tea.Msg {
-				// Clear the screen using the screen package
 				screen.Clear()
 				screen.MoveTopLeft()
 
-				// Run the actual command
 				cmd := exec.Command("bash", "-c", commandToRun)
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
 				cmd.Run()
 
-				// Exit after command completes
 				os.Exit(0)
 				return nil
 			},
 		)
+
 	case ListRefreshMsg:
 		spotlightedCmds := []*domain.Command{}
 		allCmds := []*domain.Command{}
@@ -102,11 +96,9 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		// Update lists with the commands
-		m.Lists[0].SetItems(spotlightedCmds) // Spotlight list
-		m.Lists[1].SetItems(allCmds)         // All commands list
+		m.Lists[0].SetItems(spotlightedCmds)
+		m.Lists[1].SetItems(allCmds)
 
-		// If we were deleting an item, show a successful deletion message
 		if m.deletionInProgress && m.deletingTitle != "" {
 			activeTab := m.Column.ActiveTab()
 			cmds = append(cmds, m.Lists[activeTab].NewStatusMessage(
@@ -119,20 +111,13 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
-
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Sequence(
 				CleanupTerminal,
 				tea.Quit,
 			)
-		case "a":
-			if !m.ShowForm {
-				m.ShowForm = true
-				m.Form = form.NewCommandForm()
-				return m, m.Form.Init()
-			}
-		case "n":
+		case "a", "n":
 			if !m.ShowForm {
 				m.ShowForm = true
 				m.Form = form.NewCommandForm()
@@ -141,30 +126,25 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case list.DeleteCommandMsg:
-		// Prevent multiple deletions at once
 		if m.deletionInProgress {
 			return m, nil
 		}
 
 		m.deletionInProgress = true
-		m.deletingTitle = msg.Title // Store the title of the command being deleted
+		m.deletingTitle = msg.Title
 
-		// Delete the command from the database
 		ctx := context.Background()
 		err := m.db.Delete(ctx, msg.ID)
 		if err != nil {
 			fmt.Printf("Error deleting command: %v\n", err)
 			m.deletionInProgress = false
 
-			// Show error with styled message
 			activeTab := m.Column.ActiveTab()
 			return m, m.Lists[activeTab].NewStatusMessage(
 				list.ErrorMessageStyle(list.FormatStatusMessage("Error: "+err.Error(), false)))
 		}
 
-		// Start the refresh and immediately reset the flag
-		cmd := m.refreshLists()
-		return m, cmd
+		return m, m.refreshLists()
 
 	case tea.WindowSizeMsg:
 		m.Column = column.New(msg.Width)
@@ -178,9 +158,7 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for i := range m.Lists {
 			updatedListModel, listCmd := m.Lists[i].Update(listMsg)
 			if updatedModel, ok := updatedListModel.(*list.ListModel); ok {
-				// No need to reassign since we're using pointers already
-				// The model is updated in-place
-				_ = updatedModel // Just to avoid unused variable warning
+				_ = updatedModel
 			}
 			cmds = append(cmds, listCmd)
 		}
@@ -189,18 +167,16 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case list.UpdateCommandMsg:
 		m.ShowForm = true
-		m.Form = form.NewUpdateForm(msg.Command) // Use the new form constructor that pre-fills the values
+		m.Form = form.NewUpdateForm(msg.Command)
 		m.isUpdating = true
 		return m, m.Form.Init()
 	}
 
-	// Handle form updates when form is showing
 	if m.ShowForm {
 		updatedForm, cmd := m.Form.Update(msg)
 		m.Form = updatedForm.(form.CommandForm)
 
 		if m.Form.IsCompleted() {
-			// Create or update command based on the form data
 			command := &domain.Command{
 				Command:     m.Form.Command,
 				Alias:       m.Form.Alias,
@@ -212,20 +188,17 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var err error
 
 			if m.Form.IsUpdating() {
-				// Set the ID for updates
 				command.ID = m.Form.CommandID
 				err = m.db.Update(ctx, command)
 				if err != nil {
 					fmt.Println("Failed to update command:", err)
 				} else {
-					// Show success message and refresh
 					activeTab := m.Column.ActiveTab()
 					cmds = append(cmds, m.Lists[activeTab].NewStatusMessage(
 						list.StatusMessageStyle(list.FormatStatusMessage("Updated "+command.Alias, true))))
 					cmds = append(cmds, m.refreshLists())
 				}
 			} else {
-				// Create new command
 				_, err = m.db.Create(ctx, command)
 				if err != nil {
 					fmt.Println("Failed to create command:", err)
@@ -247,7 +220,6 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	// Handle regular column and list updates
 	updatedColumnModel, colCmd := m.Column.Update(msg)
 	m.Column = updatedColumnModel.(column.ColumnModel)
 	cmds = append(cmds, colCmd)
@@ -255,7 +227,6 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	activeIdx := m.Column.ActiveTab()
 	updatedListModel, listCmd := m.Lists[activeIdx].Update(msg)
 	if updatedModel, ok := updatedListModel.(*list.ListModel); ok {
-		// No need to reassign since we're using pointers
 		_ = updatedModel
 	}
 	cmds = append(cmds, listCmd)
@@ -276,10 +247,8 @@ func (m CompositeModel) View() string {
 	)
 }
 
-// refreshLists creates a command to refresh list data from the database
 func (m CompositeModel) refreshLists() tea.Cmd {
 	return func() tea.Msg {
-		// Get all commands from database
 		ctx := context.Background()
 		commands, err := m.db.List(ctx)
 		if err != nil {
@@ -287,14 +256,13 @@ func (m CompositeModel) refreshLists() tea.Cmd {
 			return nil
 		}
 
-		// Return a message with the commands
 		return ListRefreshMsg{Commands: commands}
 	}
 }
 
 func CleanupTerminal() tea.Msg {
-	fmt.Print("\033[?1049l") // Exit alternate screen buffer
-	fmt.Print("\033[0m")     // Reset all attributes
+	fmt.Print("\033[?1049l")
+	fmt.Print("\033[0m")
 	screen.Clear()
 	screen.MoveTopLeft()
 	return nil
