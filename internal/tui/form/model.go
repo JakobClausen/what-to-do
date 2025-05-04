@@ -2,6 +2,7 @@ package form
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"what-to-do/internal/domain"
 
@@ -32,12 +33,14 @@ func createForm(command, alias, desc string, spotlight bool, id int64) CommandFo
 	var description = desc
 	var spotlighted = spotlight
 
+	editor := getPreferredEditor()
+
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewText().
 				Key("command").
 				Title("Bash Command").
-				Placeholder("Enter a bash command").
+				Placeholder("Enter a bash command").Editor(editor).
 				Value(&cmd).
 				Validate(func(str string) error {
 					if strings.TrimSpace(str) == "" {
@@ -119,4 +122,13 @@ func (f CommandForm) IsCancelled() bool {
 
 func (f CommandForm) IsUpdating() bool {
 	return f.CommandID > 0
+}
+
+func getPreferredEditor() string {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		// Default to vim but fallback to nano if needed
+		return "vim"
+	}
+	return editor
 }
