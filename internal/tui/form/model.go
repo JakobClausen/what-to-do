@@ -68,12 +68,11 @@ func createForm(command, alias, desc string, spotlight bool, id int64) CommandFo
 			huh.NewConfirm().
 				Key("spotlighted").
 				Title("Spotlight this command?").
-				Description("Spotlighted commands will appear in highlighted sections").
 				Value(&spotlighted),
 		),
 	)
 
-	form = form.WithTheme(huh.ThemeCharm())
+	form = form.WithTheme(GetStyledForm())
 
 	return CommandForm{
 		Command:     cmd,
