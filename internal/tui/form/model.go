@@ -34,7 +34,7 @@ func createForm(command, alias, desc string, spotlight bool, id int64) CommandFo
 
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewInput().
+			huh.NewText().
 				Key("command").
 				Title("Bash Command").
 				Placeholder("Enter a bash command").
@@ -58,7 +58,7 @@ func createForm(command, alias, desc string, spotlight bool, id int64) CommandFo
 					return nil
 				}),
 
-			huh.NewText().
+			huh.NewInput().
 				Key("description").
 				Title("Description (optional)").
 				Placeholder("What does this command do?").
