@@ -44,7 +44,6 @@ what-to-do
 - `Enter`: Execute selected command
 - `d`: Delete selected command
 - `u`: Update selected command
-- `Esc`: Go back from form to main view
 - `q` or `Ctrl+C`: Quit the application
 
 ## Development

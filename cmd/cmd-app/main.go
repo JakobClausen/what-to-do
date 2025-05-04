@@ -14,7 +14,7 @@ func main() {
 	physicalWidth, _, _ := term.GetSize(int(os.Stdout.Fd()))
 
 	p := tea.NewProgram(program.InitialModel(physicalWidth), tea.WithAltScreen())
-	if err := p.Start(); err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
