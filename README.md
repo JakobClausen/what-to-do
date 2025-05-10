@@ -42,7 +42,7 @@ what-to-do
 - `a` or `n`: Add a new command
 - Arrow keys: Navigate through the interface
 - `Enter`: Execute selected command
-- `c`: Copy selected command to clipboard
+- `c`: Copy selected command to clipboard and exit
 - `d`: Delete selected command
 - `u`: Update selected command
 - `q` or `Ctrl+C`: Quit the application

@@ -87,20 +87,21 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			os.Exit(0)
 			return nil
 		}
-		
+
 	case list.CopyCommandMsg:
 		commandToCopy := msg.Command
-		
-		err := clipboard.WriteAll(commandToCopy)
-		if err != nil {
-			activeTab := m.Column.ActiveTab()
-			return m, m.Lists[activeTab].NewStatusMessage(
-				list.ErrorMessageStyle(list.FormatStatusMessage("Error copying to clipboard: "+err.Error(), false)))
+
+		return m, func() tea.Msg {
+			screen.Clear()
+			screen.MoveTopLeft()
+
+			tea.Quit()
+
+			clipboard.WriteAll(commandToCopy)
+
+			os.Exit(0)
+			return nil
 		}
-		
-		activeTab := m.Column.ActiveTab()
-		return m, m.Lists[activeTab].NewStatusMessage(
-			list.StatusMessageStyle(list.FormatStatusMessage("Copied to clipboard!", true)))
 
 	case ListRefreshMsg:
 		spotlightedCmds := []*domain.Command{}
