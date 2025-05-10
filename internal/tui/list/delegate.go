@@ -9,6 +9,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type CopyCommandMsg struct {
+	Command string
+}
+
 func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 	// Important: Set a fixed spacing
@@ -67,19 +71,30 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				)
 
 			case key.Matches(msg, keys.update):
-				item, ok := m.SelectedItem().(item)
-				if !ok {
-					return nil
-				}
+							item, ok := m.SelectedItem().(item)
+							if !ok {
+								return nil
+							}
 
-				cmd := item.Command()
-				if cmd != nil {
-					return func() tea.Msg {
-						return UpdateCommandMsg{Command: cmd}
-					}
-				}
-				return nil
-			}
+							cmd := item.Command()
+							if cmd != nil {
+								return func() tea.Msg {
+									return UpdateCommandMsg{Command: cmd}
+								}
+							}
+							return nil
+				
+						case key.Matches(msg, keys.copy):
+							if i, ok := m.SelectedItem().(item); ok {
+								cmd := i.Command()
+								if cmd != nil {
+									return func() tea.Msg {
+										return CopyCommandMsg{Command: cmd.Command}
+									}
+								}
+							}
+							return nil
+						}
 		}
 
 		return nil
@@ -110,6 +125,7 @@ type delegateKeyMap struct {
 	add    key.Binding
 	update key.Binding
 	remove key.Binding
+	copy   key.Binding
 }
 
 func (d delegateKeyMap) ShortHelp() []key.Binding {
@@ -118,6 +134,7 @@ func (d delegateKeyMap) ShortHelp() []key.Binding {
 		d.add,
 		d.update,
 		d.remove,
+		d.copy,
 	}
 }
 
@@ -128,6 +145,7 @@ func (d delegateKeyMap) FullHelp() [][]key.Binding {
 			d.add,
 			d.update,
 			d.remove,
+			d.copy,
 		},
 	}
 }
@@ -149,6 +167,10 @@ func newDelegateKeyMap() *delegateKeyMap {
 		remove: key.NewBinding(
 			key.WithKeys("x", "backspace"),
 			key.WithHelp("x", "delete"),
+		),
+		copy: key.NewBinding(
+			key.WithKeys("c"),
+			key.WithHelp("c", "copy"),
 		),
 	}
 }

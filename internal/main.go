@@ -11,6 +11,7 @@ import (
 	"what-to-do/internal/tui/form"
 	"what-to-do/internal/tui/list"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/inancgumus/screen"
@@ -86,6 +87,20 @@ func (m CompositeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			os.Exit(0)
 			return nil
 		}
+		
+	case list.CopyCommandMsg:
+		commandToCopy := msg.Command
+		
+		err := clipboard.WriteAll(commandToCopy)
+		if err != nil {
+			activeTab := m.Column.ActiveTab()
+			return m, m.Lists[activeTab].NewStatusMessage(
+				list.ErrorMessageStyle(list.FormatStatusMessage("Error copying to clipboard: "+err.Error(), false)))
+		}
+		
+		activeTab := m.Column.ActiveTab()
+		return m, m.Lists[activeTab].NewStatusMessage(
+			list.StatusMessageStyle(list.FormatStatusMessage("Copied to clipboard!", true)))
 
 	case ListRefreshMsg:
 		spotlightedCmds := []*domain.Command{}
